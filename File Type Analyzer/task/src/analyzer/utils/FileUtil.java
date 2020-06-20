@@ -13,6 +13,10 @@ public class FileUtil {
         return Files.readAllBytes(Paths.get(filePath));
     }
 
+    public static List<String> readLines(String filePath) throws IOException {
+        return Files.readAllLines(Paths.get(filePath));
+    }
+
     public static void getFilesRecursive(File[] arr, List<File> fileList)
     {
         for (File f : arr)

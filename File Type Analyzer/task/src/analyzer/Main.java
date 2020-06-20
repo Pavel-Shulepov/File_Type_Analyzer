@@ -4,6 +4,7 @@ package analyzer;
 import analyzer.strategy.KmpSearchStrategy;
 import analyzer.strategy.SearchSubstring;
 import analyzer.utils.FileUtil;
+import analyzer.utils.Pattern;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,12 +13,13 @@ import java.util.concurrent.*;
 
 public class Main {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, IOException {
 
-        if (args.length < 3) throw new RuntimeException("Введите параметры!");
+        if (args.length < 2) throw new RuntimeException("Введите параметры!");
+        String patternPath = args[1];
         String folderPath = args[0];
-        String pattern = args[1];
-        String fileType = args[2];
+
+        List<Pattern> patterns = new LinkedList<>(preparePatterns(patternPath));
 
         List<File> fileList = new Vector<>();
         FileUtil.getFilesRecursive(new File[]{ new File(folderPath) }, fileList);
@@ -28,12 +30,16 @@ public class Main {
         Callable<String> searcher = () -> {
             while (fileList.size() > 0) {
                 var f = fileList.remove(0);
-                try {
-                    if (searchSubstring.contains(FileUtil.readFile(f.getPath()), pattern)) System.out.println(f.getName() + ": " + fileType);
-                    else System.out.println(f.getName() + ": " + "Unknown file type");
-                } catch (IOException e) {
-                    e.printStackTrace();
+                var content = FileUtil.readFile(f.getPath());
+                boolean wanted = false;
+                for(var p: patterns) {
+                    if (searchSubstring.contains(content, p.getPattern())) {
+                        System.out.println(f.getName() + ": " + p.getFileType());
+                        wanted = true;
+                        break;
+                    }
                 }
+                if (!wanted) System.out.println(f.getName() + ": " + "Unknown file type");
             }
             return null;
         };
@@ -46,7 +52,7 @@ public class Main {
 
     }
 
-    public static void awaitTerminationAfterShutdown(ExecutorService threadPool) {
+    private static void awaitTerminationAfterShutdown(ExecutorService threadPool) {
         threadPool.shutdown();
         try {
             if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
@@ -57,4 +63,15 @@ public class Main {
             Thread.currentThread().interrupt();
         }
     }
+
+    private static List<Pattern> preparePatterns(String patternPath) throws IOException {
+        List<Pattern> result = new LinkedList<>();
+        FileUtil.readLines(patternPath).forEach(line -> {
+            String[] params = line.split(";");
+            result.add(new Pattern(Integer.parseInt(params[0]), params[1].replaceAll("\"", ""), params[2].replaceAll("\"", "")));
+        });
+        result.sort((p1, p2) -> p2.getPriority() - p1.getPriority());
+        return result;
+    }
+
 }
