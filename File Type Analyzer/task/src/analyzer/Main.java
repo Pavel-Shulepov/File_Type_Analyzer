@@ -2,6 +2,7 @@ package analyzer;
 
 
 import analyzer.strategy.KmpSearchStrategy;
+import analyzer.strategy.RabinKarpSearchStrategy;
 import analyzer.strategy.SearchSubstring;
 import analyzer.utils.FileUtil;
 import analyzer.utils.Pattern;
@@ -24,7 +25,7 @@ public class Main {
         List<File> fileList = new Vector<>();
         FileUtil.getFilesRecursive(new File[]{ new File(folderPath) }, fileList);
 
-        SearchSubstring searchSubstring = new SearchSubstring(new KmpSearchStrategy());
+        SearchSubstring searchSubstring = new SearchSubstring(new RabinKarpSearchStrategy());
         ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
 
         Callable<String> searcher = () -> {
